@@ -1,0 +1,61 @@
+#+title: Development Status & Continuation Handoff
+#+TAGS: me ai aiAndMe
+
+# Provenance (installed once by aiActivity.cs --- not regenerated):
+#   Date:      2026-10-20T04:54:02+00:00
+#   User:      bystar
+#   Templates: /bisos/apps/defaults/ai-templates
+#   Command:   /bisos/venv/py3/devbin/aiActivity.cs -i initiate --activity=aiActivity --templates=/bisos/apps/defaults/ai-templates
+
+####+BEGIN: b:ai:file/particulars
+* AI Working Context
+  Working Directory: /bisos/git/auth/bxRepos/bxexamples/aiTemplates-DE
+  File: /bisos/git/auth/bxRepos/bxexamples/aiTemplates-DE/AI-DevStatus.org
+  Activity: aiActivity
+  Companion Docs: AI-WORKFLOW.org, AI-Activity.org, AI-DevStatus.org
+####+END:
+
+This file is a working-state handoff so development can continue on another
+machine (which has this repo but NOT the developer's =~=). It captures the
+architecture, what works, what is untested and the design decisions made so far.
+
+This file is maintained by Claude. Updates are typically triggered by the
+=/bx-status-update= slash command, after major interactions, or before a release.
+
+* Current State
+
+As of 2026-10-20: this repo is *BISOS-Digital-Ecosystem-Skills*, one of the two inputs of an assembled
+templates base (the engine =bisos-pip/aiActivity=, WorkPlan Stage 18). The other input is
+=aiTemplates-workFlow= (BISOS-AI-Workflow), which also holds the plan inherited from the old BISOS base.
+The BISOS base is =bxexamples/aiActivityTemplates=; =/bisos/apps/defaults/ai-templates= links to it.
+Since 2026-10-20 this repo is an aiActivity project itself (WorkPlan 1.1). Open: 1.2 (the
+=bisos-core= seed conventions).
+
+* Architecture
+
+- =mother/AI-Activity.org=, =mother/AI-Outputs.org= (a link out to the BISOS ledger in
+  =blee-binders/evolution/aiActivity-outputs/=, not under version control), =mother/_skills/= (20
+  skills). The base merges this =mother/= with the workflow input's.
+- Nine activities: =astro-site=, =bisos-core=, =bisos-pip=, =blee-panels=, =graphviz-pcs=, =lcnt=,
+  =pycs=, =sbom+cap=, =xu-single=.
+- Root files (=AI-*.org=, =CLAUDE.md=, =LICENSE=, =.claude/=, =.aiActivity.cs/=): this repo's own,
+  ignored by the assembler.
+
+* What Works
+
+- After adding, renaming or deleting a file here, run
+  =aiActivityAssemble.cs -i assemblyUpdate --base=/bisos/git/bxRepos/bxexamples/aiActivityTemplates=;
+  edits to existing files are live at once. =IN SYNC= after 1.1.
+
+* What Is Untested
+
+- A fresh Claude session started in this repo.
+
+* Key Design Decisions
+
+- *A fork replaces this layer* with its own ecosystem skills and activities, and adopts the workflow
+  layer as-is. Rationale: the engine =AI-DevStatus.org= and its Stage 18.
+
+# Local Variables:
+# eval: (setq-local toc-org-max-depth 4)
+# End:
