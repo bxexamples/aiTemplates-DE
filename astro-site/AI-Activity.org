@@ -10,6 +10,7 @@ from a content tree on the file system, built by Astro into static HTML that ngi
 - [[#the-common-structure][The Common Structure]]
 - [[#the-content-tree][The Content Tree]]
 - [[#astroproc-and-contenttree-in-bisoswebcap][astroProc and contentTree in bisos.webCap]]
+- [[#react-applications-as-islands][React Applications as Islands]]
 - [[#a-site-is-a-capability][A Site Is a Capability]]
 - [[#content-from-scripts-built-as-a-snapshot][Content From Scripts, Built as a Snapshot]]
 - [[#conventions][Conventions]]
@@ -204,6 +205,7 @@ table names the ones a static site uses most. The full list is that directory.
 |-------------------------+-----------------------------------------------------------------|
 | =astro-site-authorship= | creating or migrating a BISOS static site (Astro, content tree) |
 | =bx-pals-web-site=      | a PALS site: =uri/here/value=, =cbm/pals-*=, =palsOfSys.cs=     |
+| =bs-pals-web-edit=      | improving a served PALS site: its look (=local.css=), its text  |
 | =cbm-authorship=        | the site's CBM leaf: =cbmProc.spcs=, control and status         |
 | =banna-lookup=          | the site's port, =hereIp= and =_dev= port                       |
 | =readme-authorship=     | the site's =README.org=                                         |
