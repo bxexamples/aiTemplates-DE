@@ -48,9 +48,10 @@ Since 2026-10-20 this repo is an aiActivity project itself (WorkPlan 1.1). Open:
 - After adding, renaming or deleting a file here, run
   =aiActivityAssemble.cs -i assemblyUpdate --base=/bisos/git/bxRepos/bxexamples/aiActivityTemplates=;
   edits to existing files are live at once. =IN SYNC= after 1.1.
-- NOT IN SYNC since 2026-10-23: the 5 new =lcnt-*= skills are files added here, so
-  =assemblyUpdate= must be re-run before they appear in the base's =mother/_skills/=
-  (the =lcnt/AI-Activity.org= rewrite is an edit to an existing file, so it is already live).
+- 2026-10-23: added 5 =lcnt-*= skills (new files), then ran
+  =aiActivityAssemble.cs -i assemblyUpdate --base=/bisos/apps/defaults/ai-templates=
+  (link=5, conflict=0) --- =IN SYNC=. The =lcnt/AI-Activity.org= rewrite is an edit to an existing
+  file, so it was already live.
 
 * What Is Untested
 
