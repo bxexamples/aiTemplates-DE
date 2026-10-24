@@ -34,8 +34,10 @@ Since 2026-10-20 this repo is an aiActivity project itself (WorkPlan 1.1). Open:
 * Architecture
 
 - =mother/AI-Activity.org=, =mother/AI-Outputs.org= (a link out to the BISOS ledger in
-  =blee-binders/evolution/aiActivity-outputs/=, not under version control), =mother/_skills/= (20
+  =blee-binders/evolution/aiActivity-outputs/=, not under version control), =mother/_skills/= (26
   skills). The base merges this =mother/= with the workflow input's.
+  - 2026-10-23: added 5 =lcnt-*= skills (=lcnt-build-and-release=, =lcnt-info-authoring=,
+    =lcnt-ttytex-authoring=, =lcnt-new-document=, =lcnt-multimedia=) and expanded =lcnt/AI-Activity.org=.
 - Nine activities: =astro-site=, =bisos-core=, =bisos-pip=, =blee-panels=, =graphviz-pcs=, =lcnt=,
   =pycs=, =sbom+cap=, =xu-single=.
 - Root files (=AI-*.org=, =CLAUDE.md=, =LICENSE=, =.claude/=, =.aiActivity.cs/=): this repo's own,
@@ -46,6 +48,9 @@ Since 2026-10-20 this repo is an aiActivity project itself (WorkPlan 1.1). Open:
 - After adding, renaming or deleting a file here, run
   =aiActivityAssemble.cs -i assemblyUpdate --base=/bisos/git/bxRepos/bxexamples/aiActivityTemplates=;
   edits to existing files are live at once. =IN SYNC= after 1.1.
+- NOT IN SYNC since 2026-10-23: the 5 new =lcnt-*= skills are files added here, so
+  =assemblyUpdate= must be re-run before they appear in the base's =mother/_skills/=
+  (the =lcnt/AI-Activity.org= rewrite is an edit to an existing file, so it is already live).
 
 * What Is Untested
 
