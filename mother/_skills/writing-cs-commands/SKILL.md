@@ -1,6 +1,6 @@
 ---
 name: writing-cs-commands
-description: Use when writing or modifying a PyCS `cs.Cmnd` subclass — either a new command class in a `.cs` (csxu) or `_csu.py` file, or edits to an existing command's parameters, arguments, or body. Covers the `classHead` dblock, parameter/argument declaration, and the required `cmnd()` method shape.
+description: Use when writing or modifying a PyCS `cs.Cmnd` subclass — either a new command class in a `.cs` (csxu) or `_csu.py` file, or edits to an existing command's parameters, arguments, or body. Covers the `classHead` dblock, parameter/argument declaration, the required `cmnd()` method shape, and the dispatch rule (why a command that imports fine gets "Invalid Action": it must be a top-level class, in an imported `csuList` module, and a *direct* subclass of `cs.Cmnd` --- shared behaviour via mixins, aliases by delegation).
 ---
 
 # Writing PyCS CS Commands
@@ -60,8 +60,57 @@ The header dblock parameters:
 | `:pyInv`         | Python-invocation signature (usually empty)                   |
 
 Update the dblock header when you change parameters/args; Blee/Emacs
-regenerates the body when the file is opened. Outside Blee, use
-`py-dblock.cs` (from `bisos.pyDblock`) to expand dblocks.
+regenerates the body when the file is opened. `py-dblock.cs` (from
+`bisos.pyDblock`) does *not* expand `classHead` (it reports "DBLOCK-UPDATED"
+and changes nothing) --- see the `dblock-authoring` skill. Without Blee, write the
+command as a plain class (as below) and leave adding the dblock to the developer.
+
+## How PyCS finds a command --- the dispatch rule
+
+A name given with `-i <name>` is dispatched only if the class is **all three**:
+
+1. a **top-level `class` statement** in the source of the main file or of a
+   `csuList` module (the dispatcher scans source with `b.ast`, it does not inspect
+   objects);
+2. in a `csuList` module the program has **imported** (the seed's
+   `csuListImportPlus` dblock writes both the `from ... import ...` line and the
+   `csuList` entry --- a module only in the list is not scanned);
+3. a **direct subclass of `cs.Cmnd`**: `bisos.b.cs.inCmnd.cmndList_mainsMethods`
+   intersects the scanned names with `cs.cmndSubclassesNames()`, i.e.
+   `cs.Cmnd.__subclasses__()`, which lists direct subclasses only.
+
+A class that fails any of these imports fine and gets "Invalid Action". Rule 3 is
+the trap: `class b(a)` where `a` is a command, or a shared base class that derives
+from `cs.Cmnd`, makes `b` invisible. So:
+
+```python
+class _GatedMixin:                       # shared behaviour: NOT a cs.Cmnd
+    def cmnd(self, rtInv, cmndOutcome, argsList=None): ...
+
+class myGatedVerb(_GatedMixin, cs.Cmnd): # mixin first, cs.Cmnd a direct base
+    _verb = 'x'
+
+class _AliasMixin:                       # an alias delegates instead of deriving
+    _target = None
+    def cmnd(self, rtInv, cmndOutcome, **kwArgs):
+        return self._target().cmnd(rtInv=rtInv, cmndOutcome=cmndOutcome, **kwArgs)
+
+class oldName(_AliasMixin, cs.Cmnd):
+    _target = newName
+    cmndParamsMandatory = newName.cmndParamsMandatory   # the dispatcher reads them
+    cmndParamsOptional = newName.cmndParamsOptional     # from the alias itself
+    cmndArgsLen = newName.cmndArgsLen
+```
+
+Also: a class made by a factory function (`oldName = makeAlias(...)`) is never found
+(rule 1). Every top-level class of a csu module that meets the rule is registered,
+mixins excepted (they are not `cs.Cmnd`). Two `csuList` modules defining the same
+name: the later module in the list wins.
+
+**Test through the dispatcher** (`./x.cs -i <name>`), not only by calling the class
+in Python --- direct calls cannot see a dispatch failure. A quick static check of a
+module: import it, then compare `b.ast.ast_topLevelClassNamesInFile(path)` against
+`cs.cmndSubclassesNames()`.
 
 ## The `cmnd()` body
 
@@ -178,6 +227,9 @@ paths in the argument — not absolute paths constructed from `pathlib.Path.cwd(
 - Do NOT define parameters inline in the command class — declare them in
   the csxu's `commonParamsSpecify()` so the framework wires them into
   argparse. The command class only *lists* which params it accepts.
+- Do NOT derive a command from another command class or from a base that
+  derives from `cs.Cmnd` --- it will never dispatch (see "How PyCS finds a
+  command"). Use a mixin plus `cs.Cmnd` as a direct base.
 
 ## Reference examples
 

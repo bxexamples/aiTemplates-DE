@@ -31,6 +31,22 @@ the generated content.
   `aiActivity.cs initiate` for the `b:ai:file/particulars` dblock in
   copied AI files.
 
+**`py-dblock.cs` expands only the signatures registered with it** (today
+`b:ai:file/particulars`). For any other dblock it still prints
+"DBLOCK-UPDATED: <file>" and leaves the block exactly as it was --- check with
+`git diff`, do not trust the message. *Blee-only* in practice (verified
+2026-10-26): `b:py3:cs:cmnd/classHead`, `b:py3:cs:framework/csuListProc` /
+`csuListImportPlus`, and `setup.py`'s `b:py3:pypi:setup/*`. `bx-dblock -i
+dblockUpdateFiles <file>` (what `pypiProc.sh` calls for `setup.py`) needs a
+running Emacs server and fails without one. Loading
+`/bisos/git/bxRepos/blee/env3/dblocks/dblock-comeega-python.el` in `emacs --batch -Q`
+does not work either (it needs much more of Blee). So without Blee: author the
+dblock *header* or the spec it reads (e.g. the elisp `csuList`), leave the body,
+and ask the developer to regenerate. *With* the user's running Blee, Claude can
+regenerate them itself, with the user's agreement, through `bx-dblock` and the
+Emacs server: see the `bs-blee-emacs-server` skill (socket, `G_emacsServerPid`,
+the global dblock regexp, side effects).
+
 ## Dblock definitions and where they live
 
 All dblock definitions are elisp under `/bisos/blee/env3/dblocks/`. Read
@@ -117,6 +133,18 @@ function.
 This pattern applies to **csxu files only**. CSU files (`_csu.py`) do not
 have a `csuListProc` dblock.
 
+Seed csxus (e.g. `containerProc-seed.cs`, `ftoBranch-seed.cs`) use the same
+mechanism under the name `b:py3:cs:framework/csuListImportPlus`. Two things to
+know:
+- **The generated imports matter, not just the list.** PyCS looks for commands
+  only in `csuList` modules the program has imported; the regenerated block
+  writes `from <pkg> import <module>` for each entry. A module added to the list
+  by hand, without its import, contributes no commands.
+- **Pick the right seed.** A leaf-side module (e.g. `bisos.fileObj.ftoLeaf_csu`)
+  belongs in the *leaf* seed's list, never the branch seed's
+  (`ftoBranch-seed.cs`): two `csuList` modules defining the same command names ---
+  the later one wins.
+
 ## The `classHead` dblock — see `writing-cs-commands`
 
 The `b:py3:cs:cmnd/classHead` dblock generates the `cs.Cmnd` subclass header
@@ -162,6 +190,15 @@ required). Its body records `Working Directory`, `File`, `Activity`, and
   break signature parsing. Keep the header line exactly as generated.
 - **`.cs` file needs `chmod +x`** after creation — the csxu is executed
   directly. If a fresh `.cs` file gives "permission denied", `chmod +x` it.
+- **Hand-written lines inside a block are lost on regeneration.** E.g. an extra
+  `from bisos.fileObj import ftoBranch_seedInfo` once added inside
+  `ftoBranch-seed.cs`'s `csuListImportPlus` body vanished at the next
+  regeneration, and the seed's examples then raised `NameError`. Put such lines
+  *after* `####+END:`.
+- **Formatting tools that rewrite tables touch dblock bodies too.** Running
+  `org-table-align` over a whole `README.org` also realigns the generated
+  `topControls` table. Skip tables inside `#+BEGIN:` / `#+END:` (or restore them
+  from git and check with `git diff`).
 - **Adding a new dblock signature** — write the handler as a Python function
   and register it via
   `bisos.pyDblock.updateDblock.registerHandler(sig, fn)`. See

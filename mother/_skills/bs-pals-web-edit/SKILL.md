@@ -97,6 +97,23 @@ From `site.css`: `.siteHeader` > `.titleBlock` > `a.siteTitle` and the tagline `
 Use logical properties (`inline-start`, `border-inline-end`, `text-align: start`), not left / right,
 so a right-to-left page still mirrors. `text-align: center` is the same in both directions.
 
+## The Tabs: Boxed (Folder) Tabs
+
+Since 2026-10-21 the starter's `site.css` draws each top tab as its own box, so a label of several
+words reads as one tab (chosen over divider lines, a separator character and underlines). A site
+copied before then has flat tabs; bring it up with the same rule:
+
+```css
+:root { --tabBox: #c8d6df; }                      /* an unselected tab's box, on the --tabs bar */
+.tabs { padding-block-start: 0.4rem; }
+.tabGroup { gap: 0.3rem; }
+.tabs a { white-space: nowrap; background: var(--tabBox); border-radius: 6px 6px 0 0; }
+```
+
+An older site with no `.tabGroup` (tabs directly in `.tabs`) puts the gap on `.tabs`. To recolour the
+boxes for a site or an organization, override `.tabs a`, `.tabs a:hover` and `.tabs a.selected` in a
+later stylesheet; keep `nowrap` so a two-word label never breaks.
+
 ## Removing a Part of the Page (the Footer, the Site Map Link)
 
 Hide it in `local.css`; the layout stays the starter's, and deleting the rule brings it back:

@@ -251,6 +251,57 @@ For the default subprocess mode, no aggregation across sub-branches:
 each subprocess prints its own `visited=N failed=M skipped=K` line. Users
 post-process the stream (`grep`, `awk`) if they need tree-wide totals.
 
+### Ordering leaves
+
+`branchesOrdered` / `leavesOrdered` in a branch `.spcs` are taken *verbatim* as
+the names of that branch's **direct** children (ordered = authoritative; excludes
+ignored). They do not reach leaves one or more plain directories below (e.g.
+`debian/13/privileged/vnc/xfce/<leaf>`): to order those, plant a branch `.spcs` at
+their level. Without a list, children are walked in sorted order. (A redesign,
+`childNodesOrdered`, is a TODO in `bisos.fileObj`'s AI-WorkPlan, Stage 3.)
+
+## Generic lifecycle verbs --- `fto_prepare` ... `fto_status` (bisos.fileObj)
+
+`bisos.fileObj` defines one lifecycle vocabulary for every kind of walkable
+leaf, with a CBM-style gate and status log, so one walk can drive leaves of
+different kinds. The reference is `bisos.fileObj`'s README, "Generic Lifecycle
+Verbs"; first consumer: `bisos.dockerProc`.
+
+| Verb                | Means                                   | Runs when the gate is |
+|---------------------+-----------------------------------------+-----------------------|
+| `fto_prepare`       | make ready to run (non-destructive)     | not `disabled`        |
+| `fto_materialize`   | bring to the running state              | `enabled`             |
+| `fto_reMaterialize` | re-create with the current preparation  | `enabled`             |
+| `fto_unMaterialize` | take the running state down             | `enabled`             |
+| `fto_clean`         | undo prepare                            | `enabled`             |
+| `fto_verify`        | check (read-only)                       | not `disabled`        |
+| `fto_status`        | show state (read-only, not logged)      | not `disabled`        |
+
+- **Gate and log in the leaf**, named after its planted file:
+  `<leaf>/<plantStem>.control` (`enabled` | `available` | `disabled`; missing =
+  `available`; `disabled` = leave the leaf completely alone) and
+  `<leaf>/<plantStem>.status` (one timestamped line per run). Same formats as
+  CBM's `cbmProc.control` / `cbmProc.status`. Gate commands, always run:
+  `fto_control`, `fto_statusLog`, `fto_enable`, `fto_available`, `fto_disable`.
+  Whether to commit the files is the tree's call (bro_rawBisos commits its
+  `cbmProc.*`; bro_dockerfiles git-ignores its `dockerProc.*`: one VM per clone).
+- **A consumer (leaf seed) does three things:** registers what each verb does,
+  in its csu module at import:
+  ```python
+  from bisos.fileObj import ftoLeaf_seedInfo
+  ftoLeaf_seedInfo.setup(prepare=_prepare, materialize=_materialize, ...)  # (cmndOutcome) -> Outcome
+  ```
+  (a verb left out is "unsupported": success, logged `skipped: unsupported`);
+  adds `bisos.fileObj.ftoLeaf_csu` to its **leaf** seed's `csuList` spec and has
+  the `csuListImportPlus` dblock regenerated (Blee); appends
+  `ftoLeaf_seedInfo.lifecycleWalkExamples()` to its `walkExamples()` and calls
+  `ftoLeaf_seedInfo.lifecycleExamplesMenu()` in its leaf menu.
+- **At a branch the same names walk**: `./ftoBranchProc.spcs -i fto_prepare`
+  forwards to every leaf below, hands the same verb to sub-branches with their
+  own `.spcs`, and ends with a summary read back from the leaves' status logs
+  (`ran / skipped / failed / noLog`) --- because walk exit codes are unreliable
+  (`bisos.b` exits 0 on failure). Branch `.spcs` files need no change.
+
 ## Coexistence with legacy explicit markers
 
 The walker still honors explicit `_tree_` / `_treeProc_` files when they
@@ -333,6 +384,13 @@ has not yet added the two walkable-tree hooks.
 - **Don't put walk-example strings in the branch `.spcs`.** The source of
   truth is the domain seed's `walkExamples()`. Copying strings into
   branches invites drift.
+- **Don't add `bisos.fileObj.ftoLeaf_csu` to the branch seed**
+  (`ftoBranch-seed.cs`). It belongs in the *leaf* seed's `csuList`; in the
+  branch seed its leaf `fto_*` would replace the branch-side ones (same names,
+  later module wins), so branch verbs would act on the branch directory instead
+  of walking.
+- **Don't copy the gate code into a consumer** (`controlRead`, `statusWrite`,
+  ...). Use `bisos.fileObj.ftoLeaf_seedInfo` --- the copies drift.
 - **Don't add new walker-level parameters as CS params** on
   `fto_forwardToLeaves` / `fto_walkRunExternal` unless the recurse
   behavior genuinely needs them. Each subprocess re-invokes the Cmnd from

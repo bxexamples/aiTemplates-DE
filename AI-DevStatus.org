@@ -31,6 +31,17 @@ The BISOS base is =bxexamples/aiActivityTemplates=; =/bisos/apps/defaults/ai-tem
 Since 2026-10-20 this repo is an aiActivity project itself (WorkPlan 1.1). Open: 1.2 (the
 =bisos-core= seed conventions).
 
+2026-10-27 (uncommitted): new skill =bs-blee-emacs-server= --- Claude reaches the user's running
+Blee with =emacsclient -s <socket>= (the user gives the path from
+=(expand-file-name server-name server-socket-dir)=), reads its state freely, changes it only on
+request, and regenerates dblocks (the =F7 d d= / =F7 d b= functions, or =bx-dblock= with
+=G_emacsServerPid=) with the user's agreement --- verified on a scratch copy and on
+=blee/env3/plus/bcpg:magitPlus.el=. =dblock-authoring= now points to it instead of "Blee-only, ask
+the developer". Edited: =bisos-pip-setup-py=, =dblock-authoring=, =walkable-tree-planting=,
+=writing-cs-commands= (2026-10-26, from bisos.dockerProc / bisos.fileObj work). *The base is behind
+by one link* until =assemblyUpdate= (below) is run. Skill names: =bs-= prefix for skills, =bx-= for
+commands (user, 2026-10-27).
+
 * Architecture
 
 - =mother/AI-Activity.org=, =mother/AI-Outputs.org= (a link out to the BISOS ledger in
