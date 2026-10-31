@@ -156,6 +156,24 @@ Tables holding org links (`[[target][description]]`) are aligned by Emacs on the
 aligner pads by raw characters and would widen and misalign them. On such a file use `--check` only, and
 align those tables in Emacs (`C-c C-c` in the table). Found on `ai-templates/README.org`'s activity table.
 
+## Several READMEs describing the same thing
+
+A repo's README often describes commands that another repo's README also needs (a Python
+package's commands, and the Blee package that wraps them):
+
+- *One owner per table.* The README of the repo that has the commands holds the full table; the
+  other summarizes (the names, one line each) and links to that section. Two copies drift.
+- *Link across repos by GitHub anchor*:
+  `[[https://github.com/bisos-pip/aiActivity#prompt-a-vs-code-claude-session-vscodeclaudecs][Prompt a VS Code Claude Session]]`.
+  The anchor is the heading, lowercased, spaces to `-`, punctuation dropped --- as the `:TOC:`
+  entries show. Renaming a heading breaks the links to it.
+- *An org target in another file is not a link*: `[[10.9]]` in a README points to a `<<10.9>>`
+  of the README itself. Write `WorkPlan 10.9`, or a `file:` link.
+- *Cross-link both ways*, and say in each what the other holds.
+
+A Blee package's README (a blee-pkg) follows its siblings' frame (`aiplus`), not the bisos-pip
+skeleton above; the line-width rule applies to both. See the blee-pkg AI-Activity.org.
+
 ## Table of Contents
 
 `README.org` uses the `:TOC:` tag on the Table of Contents heading. The

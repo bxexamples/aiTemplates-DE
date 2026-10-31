@@ -42,6 +42,17 @@ the developer". Edited: =bisos-pip-setup-py=, =dblock-authoring=, =walkable-tree
 after it (=IN SYNC=, 78 links). Skill names: =bs-= prefix for skills, =bx-= for
 commands (user, 2026-10-27).
 
+2026-10-29/31 (from a blee/vscode-claude session; the record is there, its AI-WorkPlan.org 2.1):
+new activity =blee-pkg/= (its =AI-Activity.org=: what a blee-pkg is, structure, naming, bnpa,
+conventions --- one layer per CSXU, menus built once, fresh-Blee testing, the three-repo commit
+order, the README frame). New skill =blee-pkg-authorship= (the procedures). =bs-blee-emacs-server=:
+the socket's other sources (a prompt's =emacs==, =vscode.cs -i vscodePartner=), "Test in a fresh
+Blee", "Diagnose a slow Blee" (the menu-bar-update-hook finding of 2026-10-31, gcmh).
+=writing-cs-commands=: a small CSXU per layer; what the framework does not enforce (=opResults=None=,
+=argsMin=, =parChoices=, exit 0 on refusal, commands run by other programs). =readme-authorship=:
+several READMEs, one owner per table. =graphviz-authoring=: the vanishing cluster box. The base needs
+=assemblyUpdate= for the new skill.
+
 * Architecture
 
 - =mother/AI-Activity.org=, =mother/AI-Outputs.org= (a link out to the BISOS ledger in

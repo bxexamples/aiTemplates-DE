@@ -22,11 +22,11 @@ same shape.
 |--------------------------+----------------------------------------------------------------|
 | =mother/AI-Activity.org= | The default activity guidance                                  |
 | =mother/AI-Outputs.org=  | The cross-project ledger of findings (a link, on BISOS hosts)  |
-| =mother/_skills/=        | The ecosystem skills, one shared set (26)                      |
+| =mother/_skills/=        | The ecosystem skills, one shared set (28)                      |
 | =<activity>/=            | One per activity: =AI-Activity.org=, optional seeds, =_skills= |
 
-Activities: =astro-site=, =bisos-core=, =bisos-pip=, =blee-panels=, =graphviz-pcs=, =lcnt=, =pycs=,
-=sbom+cap=, =xu-single=.
+Activities: =astro-site=, =bisos-core=, =bisos-pip=, =blee-panels=, =blee-pkg=, =graphviz-pcs=, =lcnt=,
+=pycs=, =sbom+cap=, =xu-single=.
 
 * Using It
 

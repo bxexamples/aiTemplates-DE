@@ -1,6 +1,6 @@
 ---
 name: bs-blee-emacs-server
-description: Use when Claude needs the user's running Blee/Emacs --- to read its state (a variable, whether a hook or a reloaded function is in place, *Messages*), to check a Blee/magit setting, or to regenerate COMEEGA dblocks that only Blee can expand (`b:py3:cs:cmnd/classHead`, `b:py3:cs:framework/csuListImportPlus`, `setup.py`'s `b:py3:pypi:setup/*`) with `/bisos/blee/bin/bx-dblock`. Also when `emacsclient` says "can't find socket", or `bx-dblock` reports success but changes nothing. Covers getting the socket path from the user, `emacsclient -s`, read-only versus state-changing use, running `bx-dblock` with `G_emacsServerPid`, its side effects, and the pitfalls (the global dblock regexp, stale sockets, several Emacs instances, reload without `config|main`), and authoring new Blee elisp as COMEEGA `b:elisp:defs/*` dblocks.
+description: Use when Claude needs the user's running Blee/Emacs --- to read its state (a variable, whether a hook or a reloaded function is in place, *Messages*), to check a Blee/magit setting, or to regenerate COMEEGA dblocks that only Blee can expand (`b:py3:cs:cmnd/classHead`, `b:py3:cs:framework/csuListImportPlus`, `setup.py`'s `b:py3:pypi:setup/*`) with `/bisos/blee/bin/bx-dblock`. Also when `emacsclient` says "can't find socket", or `bx-dblock` reports success but changes nothing. Covers getting the socket path from the user, `emacsclient -s`, read-only versus state-changing use, running `bx-dblock` with `G_emacsServerPid`, its side effects, and the pitfalls (the global dblock regexp, stale sockets, several Emacs instances, reload without `config|main`), and authoring new Blee elisp as COMEEGA `b:elisp:defs/*` dblocks. Also when a Blee is slow (diagnosing it read-only: GC counts, `menu-bar-update-hook`, timing hook functions, gcmh) or when elisp must be tried interactively without touching the user's Blee (a fresh Blee started for the test).
 ---
 
 # Using the User's Running Blee (emacsclient)
@@ -23,8 +23,17 @@ and give you the result, e.g. `/tmp/emacs1000/blee-3.1-31.1-1522377`. Blee names
 the sockets are under `/tmp/emacs<uid>/`. If `(server-running-p)` is nil there, the user starts it
 with `M-x server-start`.
 
+Two other sources, when they apply:
+- *The prompt names it*: a prompt sent from Blee (blee/vscode-claude) may carry
+  `emacs=<socket>`, as `/bx-confirm-root emacs=… callback=yes` does. Use that one.
+- *The partner file*, when the user asks Claude to use Blee: `vscode.cs -i vscodePartner` prints
+  the live partner Emacs (socket, pid) that `b:vscode/init` recorded in
+  `/bisos/var/blee/vscode/partner-<user>.json`, or why there is none. Do not go looking for an Emacs
+  unasked: an AI-Activity in pure VS Code has none, and that is normal.
+
 Guessing from `ls /tmp/emacs<uid>/ /run/user/<uid>/emacs/` is a fallback only: there may be several
-live Emacs instances (not all with the latest reloads) and dead sockets left by exited ones.
+live Emacs instances (not all with the latest reloads) and dead sockets left by exited ones (an
+`emacsclient` to one may hang, or print `Terminated` under `timeout`).
 
 ## 2. Read state
 
@@ -127,6 +136,63 @@ under `;;;#+BEGIN: blee:bxPanel:foldingSection :outLevel 1 :title "..." :extraIn
 `b:elisp:defs/defvar` exists but nothing uses it yet; a plain `defvar` inside the section is fine.
 A `bcpg:` package's `setq` / `add-hook` forms go in its `bcpg:<pkg>:config|main`.
 
+## 6. Test in a fresh Blee, not the user's
+
+To try elisp interactively (a new command, a hook, a partner file), start a Blee of your own and
+drive it only through its socket. The user's Blee stays untouched.
+
+```bash
+ls /tmp/emacs$(id -u)/ > /tmp/sockets.before                  # (use the scratchpad)
+(blee -p emacs=31 -i run > /tmp/blee-run.log 2>&1 &)           # a new frame on DISPLAY
+for i in $(seq 1 60); do n=$(ls /tmp/emacs$(id -u)/ | grep -v -x -f /tmp/sockets.before); \
+  [ -n "$n" ] && break; sleep 2; done; S=/tmp/emacs$(id -u)/$n  # its socket, about 15 s
+sleep 20                                                       # let init finish
+timeout 20 emacsclient -s $S --eval '(featurep (quote b:vscode:claude))'
+...                                                            # the test
+timeout 10 emacsclient -s $S --eval '(run-at-time 0.2 nil (function kill-emacs))'
+```
+
+- In dev mode (`b:g:dev:mode?`) straight builds a blee-pkg from its local repo, and the build
+  directory links to the repo's files: the fresh Blee loads the code as it is on disk. A *new* file
+  may need a straight rebuild.
+- `kill-emacs` through a timer lets `emacsclient` return first; `kill-emacs-hook` runs (check what
+  it should clean up, e.g. a partner file).
+- A fresh Blee may take over something the user's holds (a partner role, a port): avoid running
+  such setup at startup, or undo it.
+- Anything that acts on another program (VS Code, the clipboard, X focus) still needs the user
+  watching.
+
+## 7. Diagnose a slow Blee, read-only
+
+Compare a slow instance with a fast one (or the same one before and after), changing nothing:
+
+```bash
+timeout 15 emacsclient -s $S --eval '(list :uptime (emacs-uptime) :gcs gcs-done :gcElapsed gc-elapsed
+  :buffers (length (buffer-list)) :timers (length timer-list) :idleTimers (length timer-idle-list)
+  :mbuh (mapcar (lambda (f) (if (symbolp f) f (quote <lambda>))) menu-bar-update-hook)
+  :pch post-command-hook)'
+timeout 60 emacsclient -s $S --eval '(progn (require (quote benchmark))
+  (benchmark-run 5 (some-hook-function)))'   ; (seconds GCs gc-seconds) for 5 runs
+```
+
+- *Per-redisplay hooks* (`menu-bar-update-hook`, `post-command-hook`, `pre-command-hook`) are the
+  usual suspects: time each function with `benchmark-run`. Found 2026-10-31: the Acts and Apps
+  menus rebuilt themselves from `menu-bar-update-hook`, 1.26 s and 0.26 s per run (fixed in
+  `env3/legacy/modes-menu.el`, `apps-menu.el`).
+- *A fast instance may be fast by accident*: when a function in such a hook signals an error,
+  Emacs removes it from the hook. Compare the hook lists; a function present in the slow one only,
+  and menus half-built in the fast one, point there.
+- *gcmh* (Doom's GC handler) shows `gc-cons-threshold` at `gcmh-low-cons-threshold` (800000)
+  whenever the user is idle, which is when an `emacsclient` query runs; while commands run it is
+  `gcmh-high-cons-threshold` (64 MB). Doom's `early-init.el` disables GC during startup and relies
+  on gcmh to reset it. A low threshold in a query is not a bug. GC counts follow idleness too
+  (gcmh collects at each idle): compare them as a hint, time the functions as the evidence.
+- `Error muted by safe_call … keymap-canonicalize` in `*Messages*` comes from menu items whose label
+  is an expression (a Blee idiom): noise, not slowness.
+- To relieve a slow instance, a `remove-hook` of the culprit is reversible --- with the user's
+  agreement, as for any change. The profiler (`M-x profiler-start`, `cpu`, then
+  `profiler-report`) is the user's to run.
+
 ## Pitfalls
 
 - *A file reload does not re-run `bcpg:<pkg>:config|main`*: the `setq` / `add-hook` forms of a Blee
@@ -136,7 +202,7 @@ A `bcpg:` package's `setq` / `add-hook` forms go in its `bcpg:<pkg>:config|main`
 - *Dead sockets:* `timeout` every call; a socket that does not answer in 5--10 s is stale.
 - *Magit's commit buffer* is marked unmodified after `git-commit-setup-hook`; text inserted by a hook
   is not saved unless the buffer is marked modified before finishing (see
-  `bcpg:magitPlus.el`, `bap:magit:claudeCommitMsg/offer`).
+  `b:vscode:claude:magit:commitMsg/offer` in blee/vscode-claude's `b:vscode:claude.el`).
 
 ## References
 
@@ -145,4 +211,4 @@ A `bcpg:` package's `setq` / `add-hook` forms go in its `bcpg:<pkg>:config|main`
 - `/bisos/blee/env3/legacy/bx-dblock-lib.el` (`org-dblock-update-file-bx`,
   `org-dblock-update-buffer-bx`, `org-dblock-mode-comment-regexp-bx`);
   `/bisos/git/bxRepos/blee/poly-dblock/poly-dblock.el` (the mode hooks).
-- Skill `dblock-authoring` (which dblocks need Blee).
+- Skill `dblock-authoring` (which dblocks need Blee); skill `blee-pkg-authorship` (testing a blee-pkg).

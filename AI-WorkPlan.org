@@ -29,7 +29,7 @@ workflow layer, and the plan inherited from the old BISOS base, are in =aiTempla
 
 Note to a fresh Claude: read this file together with AI-WORKFLOW.org,
 AI-Activity.org and AI-DevStatus.org to orient yourself. The =<<Context Confirmation>>=
-TODO below is the standard first step, or use =/bx-confirm0= as the automated equivalent.
+TODO below is the standard first step, or use =/bx-confirm-root= as the automated equivalent.
 TODOs tagged =:ai:= are assigned to Claude. After completing a TODO, summarize results
 under =----- Results: ------= and mark it DONE.
 
@@ -40,7 +40,7 @@ Goal: Confirm AI's understanding of the context and capture that in [[Context Co
 
 * Stage 0 TODOs
 ** +
-** LOOP [#A] <<Context Confirmation>> for AI (typically triggered by /bx-confirm0) :aiAndMe:
+** LOOP [#A] <<Context Confirmation>> for AI (typically triggered by /bx-confirm-root) :aiAndMe:
 SCHEDULED: <2026-06-09 Tue>
 Must be repeated each time a new Claude instance is started here.
 Based on the series of files starting from CLAUDE.md in this repo,

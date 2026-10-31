@@ -9,6 +9,27 @@ A PyCS command is a class that subclasses `cs.Cmnd` (from `bisos.b import cs`).
 Each command declares its parameter shape, argument shape, and a `cmnd()` method
 that does the work.
 
+## Where commands go: a small CSXU, the commands in CSUs
+
+Put the commands, their parameters and their examples in `_csu.py` modules (CS-Units), and keep the
+`.cs` CSXU small: its header dblocks, a `csuList` naming the CSUs, an `examples` Cmnd that calls each
+CSU's `examples_csu()`, and the main. One CSU per layer or facility, each with:
+
+- its `cs.Cmnd` classes;
+- `commonParamsSpecify(csParams)` --- the parameters its commands use (the CSXU's generated
+  `g_extraParams` collects them through `cs.csuList_commonParamsSpecify`);
+- `examples_csu()` --- its own `menuChapter`s, so each layer documents itself.
+
+A CSU can then be reused by another CSXU, and a CSU of a lower layer never imports a higher one (the
+Claude layer imports the vscode layer, not the reverse). Examples show the CSXU's own invocations, not
+a caller's: "Hello from vscodeClaude.cs", not "Hello from Emacs". When the layers are used separately,
+give each its own small CSXU, so each examples menu stays about one thing: model `vscode.cs` over
+`vscode_csu.py` and `vscodeClaude.cs` over `vscodeClaude_csu.py` in `bisos-pip/aiActivity`
+(below); the Claude CSU imports the vscode CSU as a library without listing it in its CSXU's
+`csuList`. A CSU's `cs-u` imports dblock does not import `csParam`: add
+`from bisos.common import csParam` after it when its commands
+take parameters (the generated classHead bodies call `csParam.mappedValue`).
+
 ## The class-head dblock is generated — author only the body
 
 The class header — the `class <Name>(cs.Cmnd):` line and the `cmnd()` signature —
@@ -143,11 +164,35 @@ Key pieces of the body:
 - **Return value** — always `cmndOutcome.set(...)` on success, or
   `failed(cmndOutcome)` on error. Never `return None` and never raise.
 
+## Outcomes, output and refusals --- what the framework does not do for you
+
+Found while writing `vscode_csu` / `vscodeClaude_csu` (bisos.aiActivity, 2026-10-29/30):
+
+- **A command that prints its own data returns `opResults=None`.** The framework prints a
+  non-None `opResults` after the command: a command that `print()`s its lines and also returns
+  them shows everything twice. Return the value (and print nothing) only for a single result.
+- **`argsMin` is not enforced** by `invocationValidate`: with no argument, `cmndArgsGet` returns
+  `None` (or the spec's default). Check and refuse:
+  ```python
+  if not (file := self.cmndArgsGet("0", cmndArgsSpecDict, argsList)):
+      b_io.eh.problem_usageError("No file: give it as the first argument")
+      return failed(cmndOutcome)
+  ```
+- **`parChoices` does not restrict values**: `--mode=bogus` reaches the command. Validate against
+  the choices yourself, with a usage error naming them.
+- **The main exits 0 even when a command refuses.** Callers (elisp's `call-process`, scripts)
+  must look for `EH_Problem` in the output, not only the exit status.
+- **A command run by another program** (a Claude Code hook, a VS Code task) has a contract of its
+  own: read `sys.stdin` only when it is not a tty; keep stdout empty when the caller reads it (a
+  hook's stdout is taken as its decision); never fail the caller (catch, note on stderr, return
+  success); time out on anything that may hang (`subprocess.run(..., timeout=...)`).
+
 ## Parameters vs. arguments
 
 - **Parameters** (`parsMand` / `parsOpt`) — named, passed on the CLI as
-  `--parName=value`. Declared in the enclosing csxu's `commonParamsSpecify()`
-  (or via `parPermanence="userConfig"` from `bisos.b.userConfig_csu`).
+  `--parName=value`. Declared in the `commonParamsSpecify()` of the CSU that
+  holds the command (or of the csxu, for a command defined there), or via
+  `parPermanence="userConfig"` from `bisos.b.userConfig_csu`.
   Read them as local variables in the `cmnd()` signature.
 
 - **Arguments** (`argsMin` / `argsMax`) — positional, passed after the verb.
@@ -237,6 +282,9 @@ paths in the argument — not absolute paths constructed from `pathlib.Path.cwd(
   - `py3/bin/aiActivity.cs` — csxu with multiple commands
     (`initiate`, `initiateSub`, `refresh`, `deClaudify`,
     `userConfig_get`, `userConfig_set`, `examples`)
+  - `py3/bin/vscode.cs` and `py3/bin/vscodeClaude.cs` — one small csxu per layer, over
+    `py3/bisos/aiActivity/vscode_csu.py` and `vscodeClaude_csu.py`, each CSU with its
+    own commands, `commonParamsSpecify()` and `examples_csu()`
 - For a simple single-XU: `/bisos/core/bpip/examples/exmpl-xu-oneSubProc.cs`
 - For CS-Unit patterns: `bisos.b.userConfig_csu` in
   `/bisos/git/auth/bxRepos/bisos-pip/b/py3/bisos/b/userConfig_csu.py`

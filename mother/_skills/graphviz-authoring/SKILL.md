@@ -252,6 +252,15 @@ When graphviz places nodes unexpectedly:
 - **Clusters and rank=same fighting**: the same node cannot be in both
   a `rank='same'` subgraph and a `cluster_` subgraph on the same
   authoritative pass. Pick one.
+  The symptom is concrete: a cluster's *box disappears* (its nodes are
+  laid out, unframed) when those nodes are also put in a `rank='same'`
+  subgraph outside the cluster --- e.g. a column-ordering loop that wraps
+  each pair in `with d.subgraph() as s: s.attr(rank='same')`. Keep the
+  ordering edges plain (`d.edge(a, b, style='invis', constraint='false')`)
+  or put the `rank='same'` subgraph *inside* the cluster.
+- **`got multiple values for keyword argument 'style'`**: a node given a
+  shared attribute dict and its own `style` (`**pythonNode, style=...`).
+  Merge first: `**{**pythonNode, 'style': 'filled,dashed'}`.
 - **Text spilling out of nodes**: labels can carry `\n` for line breaks;
   graphviz does not auto-wrap. Break long labels manually.
 - **Edges crossing when they shouldn't**: try reordering the
